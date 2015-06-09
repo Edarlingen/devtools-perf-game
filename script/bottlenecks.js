@@ -50,9 +50,6 @@ Utils.nearest = function(from, entities) {
       closest.distance = distance;
     }
   }
-  if (typeof closest.target === 'undefined') {
-    return null;
-  }
   return closest.target;
 };
 
@@ -119,7 +116,7 @@ ENGINE.Particle.prototype.step = function(dt) {
   }
   // Update index for current sprite to render
   this.spriteIndex = Math.floor(this.progress * this.sprites.length);
-}
+};
 
 /**
  * Check if star is in screen boundaries.
