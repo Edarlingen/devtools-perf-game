@@ -21,11 +21,10 @@
  * @return {Array} A new array with only passed elements
  */
 Utils.filter = function(array, test) {
-  var result = array.slice(); // Clone array
-  for (var i = 0; i < result.length; i++) {
-    if (!test(result[i])) {
-      result.splice(i, 1); // Remove element
-      i--;
+  var result = [];
+  for (var i = 0; i < array.length; i++) {
+    if (test(array[i])) {
+      result.push(array[i]);
     }
   }
   return result;
@@ -38,25 +37,23 @@ Utils.filter = function(array, test) {
  * @return {Entity} Nearest Entity
  */
 Utils.nearest = function(from, entities) {
-  var distances = [];
+  var closest = {
+    target: undefined,
+    distance: null
+  };
   for (var i = 0; i < entities.length; i++) {
     var to = entities[i];
     if (from === to) continue;
     var distance = this.distance(from, to);
-    distances.push({
-      target: to,
-      distance: distance
-    });
+    if (i === 0 || closest.distance > distance) {
+      closest.target = to;
+      closest.distance = distance;
+    }
   }
-  if (!distances.length) {
+  if (typeof closest.target === 'undefined') {
     return null;
   }
-  var sortedDistances = distances.sort(
-    function sortDistances(a, b) {
-      return a.distance - b.distance;
-    }
-  );
-  return sortedDistances[0].target;
+  return closest.target;
 };
 
 /**
@@ -74,40 +71,18 @@ ENGINE.Ship.prototype.getTarget = function() {
   return Utils.nearest(this, pool);
 };
 
-// We update those for positions, maybe we don't need it?
-var axes = {
-  x: Math.cos,
-  y: Math.sin
-};
-
 /**
  * Update position for an entity that has speed and direction.
  * @param {Number} direction Angle given in radians
  * @param {Number} value Distance to move
  */
 Utils.moveInDirection = function(direction, value) {
-  Utils.justAnExpensiveLoop();
   value /= 100;
   for (var i = 0; i < 100; i++) {
-    for (var axis in axes) {
-      this[axis] += axes[axis](this.direction) * value;
-    }
+    this.x += Math.cos(this.direction) * value;
+    this.y += Math.sin(this.direction) * value;
   }
 };
-
-/**
- * I am really just an expensive loop ;)
- * Remove me and all references calling me!
- */
-Utils.justAnExpensiveLoop = function() {
-  // This isn't even doing anything
-  var oops = Array(1000);
-  oops.map(function(val, i) {
-    return Math.PI / 2500 * i;
-  }).filter(function(rad) {
-    return Math.sin(rad) > 0;
-  });
-}
 
 /**
  * Update ship position with current direction and speed
@@ -131,9 +106,8 @@ ENGINE.Ship.prototype.move = function(dt) {
 ENGINE.Particle.prototype.step = function(dt) {
   this.lifetime += dt;
   // Update position
-  for (var axis in axes) {
-    this[axis] += axes[axis](this.direction) * this.speed * dt;
-  }
+  this.x += Math.cos(this.direction) * this.speed * dt;
+  this.y += Math.sin(this.direction) * this.speed * dt;
   this.speed = Math.max(0, this.speed - this.damping * dt);
 
   this.progress = Math.min(this.lifetime / this.duration, 1.0);
